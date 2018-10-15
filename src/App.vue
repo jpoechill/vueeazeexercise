@@ -28,18 +28,18 @@
       <div class="container">
         <div class="row">
           <div class="col-md-12 trending-container">
-            <b>Trending</b>
+            <b>{{ currPageTitle }}</b>
           </div>
         </div>
         <div class="row">
           <div class="col-md-12">
             <transition-group appear name="fade">
               <div v-for="(image, index) in list" v-bind:style="{ 'z-index': image.zIndex, width: image.images.fixed_height_still.width + 'px', height: image.images.fixed_height_still.height + 'px'}" :key="image.id" v-on:mouseover="itemHover(index, image.images.fixed_height_still.url, image.images.fixed_height.url)" style="position: relative" v-on:mouseout="itemHoverOut(index)" class="image-container box" >
-                <div v-if="image.infoTextVis" v-bind:style="{ width: image.images.fixed_height_still.width + 'px', height: image.images.fixed_height_still.height + 'px'}" style="color: #FFF; font-size: 12px; padding: 16px; position: absolute; overflow: hidden; z-index: 1000; line-height: 15px;">
+                <div v-if="image.infoTextVis" class="info-box">
                   {{ image.title }} <br>
                   uploaded 10 days ago <br>
                 </div>
-                <div class="linear-gradient" v-bind:style="{ width: image.images.fixed_height_still.width + 'px', height: image.images.fixed_height_still.height + 'px'}" style="bottom: 0px; position: absolute;">
+                <div class="linear-gradient-box linear-gradient">
                 </div>
                 <div>
                   <img :src="image.images.currUrl" >
@@ -61,12 +61,103 @@
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import axios from 'axios'
 
 export default {
-  name: 'app',
-  components: {
-    HelloWorld
+  data: function () {
+    return {
+      currHoverIndex: '',
+      currPageTitle: 'Trending',
+      showDetail: false,
+      searchQuery: '',
+      audio: new Audio('http://www.orangefreesounds.com/wp-content/uploads/2017/06/Short-piano-intro.mp3'),
+      list: []
+    }
+  },
+  created: function () {
+    this.audio.volume = 0.3
+
+    // load trending
+    this.getTrending()
+  },
+  methods: {
+    handleSearch: function () {
+      if (this.searchQuery !== '' && this.searchQuery.length > 1) {
+        this.currPageTitle = 'Search Results'
+        this.getSearch();
+      } else {
+        this.currPageTitle = 'Trending'
+        this.getTrending();
+      }
+    },
+    getSearch: function () {
+      axios.get('http://api.giphy.com/v1/gifs/search?api_key=VtykJotbijLrvQIplNYWA0xx7mj6W6Y6&q=' + this.searchQuery + '&limit=40')
+      .then(response => {
+        response.data.data = response.data.data.map(x => {
+          x.images.currUrl = x.images.fixed_height_still.url
+          x.zIndex = 0
+          x.infoTextVis = false 
+          return x
+        })
+
+        this.list = response.data.data
+      })
+      .catch(e => {
+        self.errors.push(e)
+      })
+    },
+    getTrending: function () {
+      axios.get(`http://api.giphy.com/v1/gifs/trending?api_key=VtykJotbijLrvQIplNYWA0xx7mj6W6Y6&limit=40`)
+      .then(response => {
+        response.data.data = response.data.data.map(x => {
+          x.images.currUrl = x.images.fixed_height_still.url
+          x.zIndex = 0
+          x.infoTextVis = false 
+          return x
+        })
+
+        this.list = response.data.data
+      })
+      .catch(e => {
+        self.errors.push(e)
+      })
+    },
+    alert: function (msg) {
+      alert(msg)
+    },
+    itemHover: function (index, imgStill, imgActive) {
+      let self = this
+      
+      this.list[index].infoTextVis = true;
+      this.list[index].zIndex = 1000 
+      this.currHoverIndex = index
+
+      // delay audio
+      setTimeout(function() {
+        if (self.currHoverIndex === index) {
+          self.audio.play()
+        }
+      }, 2000)
+      
+      // delay animate
+      setTimeout(function() {
+        if (self.currHoverIndex === index) {
+          self.list[index].images.currUrl = imgActive
+        }
+      }, 1200)     
+    },
+    itemHoverOut: function () {
+      // reset imgs, and pause music 
+      this.list = this.list.map(x => {
+        x.images.currUrl = x.images.fixed_height_still.url
+        x.infoTextVis = false
+        x.zIndex = 0;
+        return x
+      })
+      
+      this.audio.currentTime = 0;
+      this.audio.pause();
+    }
   }
 }
 </script>
@@ -74,6 +165,7 @@ export default {
 <style lang="scss">
 
 $black: #111;
+$white: #FFF;
 
 html, body {
   font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -86,22 +178,14 @@ html, body {
   box-sizing: border-box;
   background-color: $black;
 }
+
 *, *:before, *:after {
   box-sizing: border-box;
   margin: 0;
 }
 
-a, a:visited {
-  color: #FFF;
-}
-
-a:hover {
-  color: #FFF;
-  text-decoration: none;
-}
-
 header {
-  background-color: #111;
+  background-color: $black;
   width: 100%;
 }
 
@@ -123,6 +207,15 @@ header {
   font-family: 'Fugaz One'
 }
 
+.logo-type a:hover {
+  color: #FFF;
+  text-decoration: none;
+}
+
+a, a:visited {
+  color: $white;
+}
+
 input[type="text"] {
   padding: 4px;
   size: 100;
@@ -142,7 +235,7 @@ input:focus {
 }
 
 .search-type_sml {
-  margin-left: 30px;
+  margin-left: 20px;
   vertical-align: top;
 }
 
@@ -169,14 +262,31 @@ footer {
   width: 100%;
 }
 
+.info-box {
+  color: $white; 
+  font-size: 12px; 
+  padding: 16px; 
+  position: absolute; 
+  overflow: hidden; 
+  z-index: 1000; 
+  width: 100%; 
+  height: 100%;
+  line-height: 15px;
+  opacity: 0;
+  touch-action: none;
+  transition: opacity .8s;
+}
+
+.info-box:hover {
+  opacity: 1;
+  touch-action: auto;
+  cursor: pointer;
+}
+
 .box {
   background-color: #bbb;
   margin: 10px 15px 10px 0px;
   display: inline-block;
-}
-
-.box:hover {
-  background-color: orange;
 }
 
 .footer {
@@ -188,14 +298,23 @@ footer {
   font-size: 48px;
 }
 
+// vue transitions, animations
 .fade-enter-active, .fade-leave-active {
   transition: opacity .5s;
 }
+
 .fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
   opacity: 0;
 }
 
 // sourced
+.linear-gradient-box {
+  bottom: 0px; 
+  width: 100%; 
+  height: 100%;
+  position: absolute;
+}
+
 .linear-gradient {
   /* Permalink - use to edit and share this gradient: http://colorzilla.com/gradient-editor/#000000+0,000000+100&0+0,0.65+100 */
   background: -moz-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,0.65) 100%); /* FF3.6-15 */
