@@ -38,8 +38,8 @@
                 <div v-if="image.infoTextVis" class="info-box">
                   {{ image.title }} <br>
                   uploaded 10 days ago <br>
-                  <a href="/#" v-if="playSound" @click="handleSound('off')" v-on:mouseover="click" v-on:mouseout="clickOff()">sound off</a>
-                  <a href="/#" v-else @click="handleSound('on')" v-on:mouseover="click" v-on:mouseout="clickOff()">sound on</a>
+                  <span v-if="playSound" @click="handleSound('off'); return false;" v-on:mouseover="click" v-on:mouseout="clickOff()">sound off</span>
+                  <span v-else @click="handleSound('on'); return false;" v-on:mouseover="click" v-on:mouseout="clickOff()">sound on</span>
                 </div>
                 <div class="linear-gradient-box linear-gradient">
                 </div>
@@ -68,7 +68,7 @@ import axios from 'axios'
 export default {
   data: function () {
     return {
-      currHoverIndex: 0,
+      currHoverIndex: null,
       boxHovered: false,
       linkHovered: false,
       currPageTitle: 'Trending',
@@ -97,6 +97,7 @@ export default {
         self.linkHovered = false;
       }, 0)
     },
+    
     handleSound: function (control) {
       if (control === 'off') {
         this.playSound = false
@@ -105,6 +106,8 @@ export default {
         this.playSound = true
         this.audio.volume = 0.3
       }
+      
+      return false;
     },
     handleSearch: function () {
       if (this.searchQuery !== '' && this.searchQuery.length > 1) {
@@ -185,7 +188,7 @@ export default {
         if (self.currHoverIndex !== index) {
           self.boxHovered = false
         }
-        
+
         if (self.boxHovered === false && self.linkHovered === false) {
           self.list = self.list.map(x => {
             x.images.currUrl = x.images.fixed_height_still.url
