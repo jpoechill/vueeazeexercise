@@ -14,7 +14,7 @@
 * [Bootstrap 4](https://getbootstrap.com/)  – Frontend, HTML/CSS framework
 * [Axios.js](https://www.npmjs.com/package/axios) – For making and retrieving from data from API calls
 
-### To-do
+### My To-do
 
 * Add search icon
 * Add placeholder images 

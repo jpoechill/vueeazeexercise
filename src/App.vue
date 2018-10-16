@@ -38,6 +38,8 @@
                 <div v-if="image.infoTextVis" class="info-box">
                   {{ image.title }} <br>
                   uploaded 10 days ago <br>
+                  <a href="/#" v-if="playSound" @click="handleSound('off')" v-on:mouseover="click" v-on:mouseout="clickOff()">sound off</a>
+                  <a href="/#" v-else @click="handleSound('on')" v-on:mouseover="click" v-on:mouseout="clickOff()">sound on</a>
                 </div>
                 <div class="linear-gradient-box linear-gradient">
                 </div>
@@ -66,21 +68,44 @@ import axios from 'axios'
 export default {
   data: function () {
     return {
-      currHoverIndex: '',
+      currHoverIndex: 0,
+      boxHovered: false,
+      linkHovered: false,
       currPageTitle: 'Trending',
       showDetail: false,
+      playSound: true,
       searchQuery: '',
-      audio: new Audio('http://www.orangefreesounds.com/wp-content/uploads/2017/06/Short-piano-intro.mp3'),
+      audio: '',
       list: []
     }
   },
   created: function () {
+    this.audio = new Audio('http://www.orangefreesounds.com/wp-content/uploads/2017/06/Short-piano-intro.mp3')
     this.audio.volume = 0.3
 
     // load trending
     this.getTrending()
   },
   methods: {
+    click: function (e) {
+      this.linkHovered = true;
+    },
+    clickOff: function () {
+      let self = this
+
+      setTimeout(function() {
+        self.linkHovered = false;
+      }, 0)
+    },
+    handleSound: function (control) {
+      if (control === 'off') {
+        this.playSound = false
+        this.audio.volume = 0
+      } else {
+        this.playSound = true
+        this.audio.volume = 0.3
+      }
+    },
     handleSearch: function () {
       if (this.searchQuery !== '' && this.searchQuery.length > 1) {
         this.currPageTitle = 'Search Results'
@@ -91,7 +116,7 @@ export default {
       }
     },
     getSearch: function () {
-      axios.get('http://api.giphy.com/v1/gifs/search?api_key=VtykJotbijLrvQIplNYWA0xx7mj6W6Y6&q=' + this.searchQuery + '&limit=40')
+      axios.get('http://api.giphy.com/v1/gifs/search?api_key=VtykJotbijLrvQIplNYWA0xx7mj6W6Y6&q=' + this.searchQuery + '&limit=20')
       .then(response => {
         response.data.data = response.data.data.map(x => {
           x.images.currUrl = x.images.fixed_height_still.url
@@ -107,7 +132,7 @@ export default {
       })
     },
     getTrending: function () {
-      axios.get(`http://api.giphy.com/v1/gifs/trending?api_key=VtykJotbijLrvQIplNYWA0xx7mj6W6Y6&limit=40`)
+      axios.get(`http://api.giphy.com/v1/gifs/trending?api_key=VtykJotbijLrvQIplNYWA0xx7mj6W6Y6&limit=20`)
       .then(response => {
         response.data.data = response.data.data.map(x => {
           x.images.currUrl = x.images.fixed_height_still.url
@@ -128,35 +153,53 @@ export default {
     itemHover: function (index, imgStill, imgActive) {
       let self = this
       
+      this.boxHovered = true
       this.list[index].infoTextVis = true;
-      this.list[index].zIndex = 1000 
+      this.list[index].zIndex = 100000000000 
       this.currHoverIndex = index
 
       // delay audio
-      setTimeout(function() {
-        if (self.currHoverIndex === index) {
-          self.audio.play()
-        }
-      }, 2000)
-      
-      // delay animate
-      setTimeout(function() {
-        if (self.currHoverIndex === index) {
-          self.list[index].images.currUrl = imgActive
-        }
-      }, 1200)     
+      if (this.boxHovered && !this.linkHovered) {
+        setTimeout(function() {
+          if (self.currHoverIndex === index && self.playSound) {
+            self.audio.play()
+          }
+        }, 2000)
+        
+        // delay animate
+        setTimeout(function() {
+          if (self.currHoverIndex === index) {
+            self.list[index].images.currUrl = imgActive
+          }
+        }, 1200)   
+      }
+        
     },
-    itemHoverOut: function () {
-      // reset imgs, and pause music 
-      this.list = this.list.map(x => {
-        x.images.currUrl = x.images.fixed_height_still.url
-        x.infoTextVis = false
-        x.zIndex = 0;
-        return x
-      })
+    itemHoverOut: function (index) {
+      // reset imgs, and pause music   
+      let self = this
+      console.log('Hover out')
+      self.boxHovered = false;
+
+      setTimeout(function() {
+        if (self.currHoverIndex !== index) {
+          self.boxHovered = false
+        }
+        
+        if (self.boxHovered === false && self.linkHovered === false) {
+          self.list = self.list.map(x => {
+            x.images.currUrl = x.images.fixed_height_still.url
+            x.infoTextVis = false
+            x.zIndex = 100000000;
+            return x
+          })
+
+          // alert('activated')
+          self.audio.currentTime = 0;
+          self.audio.pause();
+        } 
+      }, 100) 
       
-      this.audio.currentTime = 0;
-      this.audio.pause();
     }
   }
 }
@@ -245,6 +288,7 @@ section {
 }
 
 .image-container {
+  z-index: 10;
   transform: scale;
   transition: .3s transform;
 }
