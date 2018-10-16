@@ -87,7 +87,7 @@ export default {
     this.getTrending()
   },
   methods: {
-    click: function (e) {
+    click: function () {
       this.linkHovered = true;
     },
     clickOff: function () {
@@ -181,7 +181,7 @@ export default {
     itemHoverOut: function (index) {
       // reset imgs, and pause music   
       let self = this
-      console.log('Hover out')
+      
       self.boxHovered = false;
 
       setTimeout(function() {
